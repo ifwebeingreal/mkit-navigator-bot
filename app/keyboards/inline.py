@@ -15,9 +15,35 @@ admin_cancel = InlineKeyboardMarkup(
     ]
 )
 
+user_panel = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="💊 Принять красную таблетку", callback_data="start_quiz")],
+    ]
+)
+
+user_cancel = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="❌ Отменить", callback_data="user_cancel")]
+    ]
+)
+
+data_panel = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Отправить", callback_data="finally_send")],
+        [InlineKeyboardButton(text="📃Политика обработки", url="https://mkit.online/#policy")],
+        [InlineKeyboardButton(text="❌ Отменить", callback_data="user_cancel")],
+    ]
+)
+
+user_back_to_menu = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="🏡 Вернуться в меню", callback_data="user_back_to_menu")]
+    ]
+)
+
 check_sub = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Подписаться", url=config.bot.channel_link)],
-        [InlineKeyboardButton(text="Проверить подписку", callback_data="check_sub")]
+        [InlineKeyboardButton(text="Проверить подключение", callback_data="check_sub")]
     ]
 )

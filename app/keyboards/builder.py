@@ -25,3 +25,13 @@ async def edit_admin(id: int):
     kb.row(InlineKeyboardButton(text="🔙 Назад", callback_data=f"admins"))
 
     return kb.as_markup()
+
+
+async def result_panel(key: str):
+    kb = InlineKeyboardBuilder()
+
+    kb.row(InlineKeyboardButton(text="👉🏻 Запросить консультацию", callback_data=f"send_request_{key}", style="danger"))
+    kb.row(InlineKeyboardButton(text="🔁 Пройти тест заново", callback_data=f"start_quiz"))
+    kb.row(InlineKeyboardButton(text="🏡 Главное меню", callback_data=f"user_back"))
+
+    return kb.as_markup()

@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards.builder as bkb
 import app.keyboards.inline as ikb
 
-from app.database.requests.user.select import get_statistics, get_users, get_users_count
+from app.database.requests.user.select import get_statistics, get_users, get_users_count, get_quiz_statistics
 from app.database.requests.admin.select import get_admins, get_admin
 from app.database.requests.admin.delete import delete_admin
 from app.database.requests.admin.add import set_admin
@@ -20,21 +20,32 @@ admin = Router()
 @admin.message(F.text == "Админ-панель")
 async def admin_panel(message: Message):
     daily_users, monthly_users, total_users = await get_statistics()
+    daily_quiz, monthly_quiz, total_quiz = await get_quiz_statistics()
     admins = await get_admins()
 
     for admin in admins:
         if admin.tg_id == message.from_user.id:
+
             response = (
-                f"<b>Добро пожаловать в админ-панель! 🎉</b>\n\n"
-                f"📊 <b>Статистика пользователей:</b>\n"
-                f"🌟 <b>За сегодня:</b> {daily_users} пользователей\n"
-                f"📅 <b>За месяц:</b> {monthly_users} пользователей\n"
-                f"🌍 <b>Всего:</b> {total_users} пользователей\n\n"
-                f"✨<i>Спасибо за вашу работу!</i>"
+                f"<b>🛠 Админ-панель МКИТ</b>\n\n"
+
+                f"<b>👥 Пользователи:</b>\n"
+                f"📊 Сегодня: <b>{daily_users}</b>\n"
+                f"📅 За месяц: <b>{monthly_users}</b>\n"
+                f"🌍 Всего: <b>{total_users}</b>\n\n"
+
+                f"<b>🧠 Прохождения квиза:</b>\n"
+                f"📊 Сегодня: <b>{daily_quiz}</b>\n"
+                f"📅 За месяц: <b>{monthly_quiz}</b>\n"
+                f"🏁 Всего: <b>{total_quiz}</b>\n\n"
+
+                f"✨ <i>Система работает стабильно</i>"
             )
 
-            await message.answer(text=response,
-                                 reply_markup=ikb.admin_panel)
+            await message.answer(
+                text=response,
+                reply_markup=ikb.admin_panel
+            )
             return
 
 
@@ -118,21 +129,31 @@ async def send_all(message: Message, state: FSMContext, bot: Bot):
 @admin.callback_query(F.data == "back")
 async def back(callback: CallbackQuery, state: FSMContext):
     daily_users, monthly_users, total_users = await get_statistics()
+    daily_quiz, monthly_quiz, total_quiz = await get_quiz_statistics()
     admins = await get_admins()
 
     for admin in admins:
         if admin.tg_id == callback.from_user.id:
             response = (
-                f"<b>Добро пожаловать в админ-панель! 🎉</b>\n\n"
-                f"📊 <b>Статистика пользователей:</b>\n"
-                f"🌟 <b>За сегодня:</b> {daily_users} пользователей\n"
-                f"📅 <b>За месяц:</b> {monthly_users} пользователей\n"
-                f"🌍 <b>Всего:</b> {total_users} пользователей\n\n"
-                f"✨<i>Спасибо за вашу работу!</i>"
+                f"<b>🛠 Админ-панель МКИТ</b>\n\n"
+
+                f"<b>👥 Пользователи:</b>\n"
+                f"📊 Сегодня: <b>{daily_users}</b>\n"
+                f"📅 За месяц: <b>{monthly_users}</b>\n"
+                f"🌍 Всего: <b>{total_users}</b>\n\n"
+
+                f"<b>🧠 Прохождения квиза:</b>\n"
+                f"📊 Сегодня: <b>{daily_quiz}</b>\n"
+                f"📅 За месяц: <b>{monthly_quiz}</b>\n"
+                f"🏁 Всего: <b>{total_quiz}</b>\n\n"
+
+                f"✨ <i>Система работает стабильно</i>"
             )
 
-            await callback.message.edit_text(text=response,
-                                 reply_markup=ikb.admin_panel)
-            await state.clear()
+            await callback.message.edit_text(
+                text=response,
+                reply_markup=ikb.admin_panel
+            )
 
+            await state.clear()
             return

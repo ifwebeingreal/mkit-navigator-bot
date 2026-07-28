@@ -42,3 +42,34 @@ async def get_statistics():
         total_users = await session.scalar(select(func.count(User.id)))
 
         return daily_users, monthly_users, total_users
+
+
+async def get_quiz_statistics():
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    async with async_session() as session:
+
+        daily_users = await session.scalar(
+            select(func.count(User.id))
+            .where(
+                User.quiz_completed_at >= today_start,
+                User.quiz_completed_at.isnot(None)
+            )
+        )
+
+        monthly_users = await session.scalar(
+            select(func.count(User.id))
+            .where(
+                User.quiz_completed_at >= start_of_month,
+                User.quiz_completed_at.isnot(None)
+            )
+        )
+
+        total_users = await session.scalar(
+            select(func.count(User.id))
+            .where(User.quiz_completed_at.isnot(None))
+        )
+
+        return daily_users, monthly_users, total_users

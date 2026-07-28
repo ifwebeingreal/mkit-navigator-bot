@@ -15,6 +15,7 @@ class BotConfig(CommonConfig):
     admins: List[int] = Field(default_factory=list, alias="ADMINS")
     channel_id: int = Field(..., alias="CHANNEL_ID")
     channel_link: str = Field(..., alias="CHANNEL_LINK")
+    request_chat_id: str = Field(..., alias="REQUEST_CHAT_ID")
 
 
 class RedisConfig(CommonConfig):
