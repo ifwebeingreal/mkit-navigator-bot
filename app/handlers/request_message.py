@@ -8,6 +8,8 @@ import app.keyboards.builder as bkb
 
 from app.states import SendRequest
 
+from app.utils.tasks.bitrix_task import save_lead_to_bitrix
+
 from config import config
 
 
@@ -115,6 +117,12 @@ async def finally_send(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await bot.send_message(
         chat_id=config.bot.request_chat_id,
         text=admin_text
+    )
+
+    save_lead_to_bitrix.delay(
+        name=name,
+        phone=phone,
+        speciality=key
     )
 
     await state.clear()

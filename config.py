@@ -33,10 +33,15 @@ class DatabaseConfig(CommonConfig):
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
+class BitrixConfig(CommonConfig):
+    bitrix_webhook_url: str = Field(..., alias="BITRIX_WEBHOOK_URL")
+
+
 class Settings:
     bot = BotConfig()
     redis = RedisConfig()
     database = DatabaseConfig()
+    bitrix = BitrixConfig()
 
 
 config = Settings()

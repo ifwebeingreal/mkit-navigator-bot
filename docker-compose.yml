@@ -30,6 +30,15 @@ services:
     env_file:
       - .env
 
+  celery:
+    build:
+      context: .
+      dockerfile: ./
+    command: celery -A backend.src.tasks.celery_worker worker --loglevel=info
+    restart: always
+    env_file:
+      - .env
+
 #volumes:
 #  postgres_data:
 #  redis_data:
