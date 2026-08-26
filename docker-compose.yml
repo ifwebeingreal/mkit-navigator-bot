@@ -21,7 +21,7 @@ services:
 #      - redis_data:/data
 
   bot:
-    build: ./
+    build: .
     command: python3 main.py
 #    depends_on:
 #      - db
@@ -31,8 +31,7 @@ services:
       - .env
 
   celery:
-    build:
-      dockerfile: ./
+    build: .
     command: celery -A backend.src.tasks.celery_worker worker --loglevel=info
     restart: always
     env_file:
