@@ -32,7 +32,6 @@ services:
 
   celery:
     build:
-      context: .
       dockerfile: ./
     command: celery -A backend.src.tasks.celery_worker worker --loglevel=info
     restart: always
