@@ -7,9 +7,7 @@ from aiogram_dialog.widgets.text import Const, Format
 
 from app.states import Quiz
 
-from app.handlers.quiz_message.on_click import (
-    on_back_menu, on_back, on_answer
-)
+from app.handlers.quiz_message.on_click import on_back_menu, on_back, on_answer
 from app.handlers.quiz_message.getter import quiz_getter
 
 from config import config
@@ -33,7 +31,7 @@ quiz_dialog = Dialog(
             Button(Const("⏪ Назад"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_1,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -51,7 +49,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_2,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -69,7 +67,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_3,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -87,7 +85,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_4,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -105,7 +103,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_5,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -123,7 +121,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_6,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -141,7 +139,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_7,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -159,7 +157,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_8,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
     Window(
         Format(
@@ -176,7 +174,7 @@ quiz_dialog = Dialog(
             Button(Const("🏡 Главное меню"), id="back_menu_btn", on_click=on_back_menu),
         ),
         state=Quiz.question_9,
-        getter=quiz_getter
+        getter=quiz_getter,
     ),
 )
 
@@ -202,7 +200,7 @@ async def quiz_callback(callback: CallbackQuery, dialog_manager: DialogManager):
             """⚠️ Пифия пока тебя не видит.
 Чтобы пройти тест, подпишись на наш канал — это твой ключ к системе.
 После подписки нажми кнопку ещё раз 👇""",
-            reply_markup=ikb.check_sub
+            reply_markup=ikb.check_sub,
         )
         print("CHECK SUBSCRIBE ON CHANNEL")
         await callback.answer()

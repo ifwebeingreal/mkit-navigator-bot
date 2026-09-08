@@ -48,14 +48,17 @@ async def start_command(message: Message):
 
 Выбор за тобой. Нажми кнопку ниже 👇
 """,
-    reply_markup=ikb.user_panel)
+        reply_markup=ikb.user_panel,
+    )
 
     admins = await get_admins()
 
     for admin in admins:
         if admin.tg_id == message.from_user.id:
-            await message.answer(f"Вы успешно авторизовались как администратор!",
-                                 reply_markup=rkb.admin_menu)
+            await message.answer(
+                f"Вы успешно авторизовались как администратор!",
+                reply_markup=rkb.admin_menu,
+            )
             return
 
 
@@ -83,7 +86,8 @@ async def user_back(callback: CallbackQuery, state: FSMContext):
 
 Выбор за тобой. Нажми кнопку ниже 👇
 """,
-        reply_markup=ikb.user_panel)
+        reply_markup=ikb.user_panel,
+    )
 
     await state.clear()
 
@@ -111,7 +115,8 @@ async def user_back_to_menu(callback: CallbackQuery, state: FSMContext):
 
 Выбор за тобой. Нажми кнопку ниже 👇
 """,
-        reply_markup=ikb.user_panel)
+        reply_markup=ikb.user_panel,
+    )
 
     await state.clear()
 

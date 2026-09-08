@@ -31,8 +31,10 @@ async def main():
     redis = await aioredis.from_url(config.redis.redis_url)
     await create_db()
 
-    bot = Bot(token=config.bot.bot_token,
-              default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = Bot(
+        token=config.bot.bot_token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     dp = Dispatcher(storage=RedisStorage(redis, DefaultKeyBuilder(with_destiny=True)))
 
     # dp.message.middleware(CheckSubscription())
@@ -54,6 +56,7 @@ async def main():
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)

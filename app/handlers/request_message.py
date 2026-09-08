@@ -12,7 +12,6 @@ from app.utils.tasks.bitrix_task import save_lead_to_bitrix
 
 from config import config
 
-
 request = Router()
 
 
@@ -34,7 +33,7 @@ async def start_send_request(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(
         """🔮 Пифия улыбается: «Я вижу твой путь. Осталось узнать твоё имя».
 ✨ Как к тебе обращаться? Напиши своё имя 👇""",
-        reply_markup=ikb.user_cancel
+        reply_markup=ikb.user_cancel,
     )
 
     await state.set_state(SendRequest.name)
@@ -48,15 +47,14 @@ async def check_name(message: Message, state: FSMContext):
         await message.answer(
             """🔮 «Почти всё решено. Дай мне способ с тобой связаться».
 📞 Оставь свой номер телефона, чтобы мы могли с тобой связаться 👇""",
-            reply_markup=ikb.user_cancel
+            reply_markup=ikb.user_cancel,
         )
 
         await state.set_state(SendRequest.phone)
 
     else:
         await message.answer(
-            "<b>Имя должно быть до 200 символов!</b>",
-            reply_markup=ikb.user_cancel
+            "<b>Имя должно быть до 200 символов!</b>", reply_markup=ikb.user_cancel
         )
 
 
@@ -67,9 +65,9 @@ async def check_phone(message: Message, state: FSMContext):
 
         await message.answer(
             "<b>📌 Подтверждение заявки</b>\n\n"
-"Нажимая «Отправить», ты даёшь согласие на обработку персональных данных\n"
-"и подтверждаешь отправку заявки в приёмную комиссию МКИТ.",
-            reply_markup=ikb.data_panel
+            "Нажимая «Отправить», ты даёшь согласие на обработку персональных данных\n"
+            "и подтверждаешь отправку заявки в приёмную комиссию МКИТ.",
+            reply_markup=ikb.data_panel,
         )
 
         await state.set_state(SendRequest.confirm)
@@ -77,7 +75,7 @@ async def check_phone(message: Message, state: FSMContext):
     else:
         await message.answer(
             "<b>Номер телефона должен быть короче 15 символов!</b>",
-            reply_markup=ikb.user_cancel
+            reply_markup=ikb.user_cancel,
         )
 
 
@@ -90,7 +88,7 @@ async def finally_send(callback: CallbackQuery, state: FSMContext, bot: Bot):
         "📞 В ближайшее время с тобой свяжется специалист и расскажет все детали поступления.\n\n"
         "🌐 А пока можешь заглянуть на mkit.online — там подробно про каждую специальность, стоимость обучения и день открытых дверей.",
         reply_markup=ikb.user_back_to_menu,
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
     )
 
     data = await state.get_data()
@@ -104,25 +102,16 @@ async def finally_send(callback: CallbackQuery, state: FSMContext, bot: Bot):
         f"🎯 <b>Направление:</b> {key}\n\n"
         f"👤 <b>Имя:</b> {name}\n"
         f"📞 <b>Телефон:</b> {phone}\n\n"
-
         "👤 <b>Данные Telegram</b>\n"
         f"• ID: <code>{callback.from_user.id}</code>\n"
         f"• Имя в Telegram: {callback.from_user.full_name}\n"
         f"• Username: @{callback.from_user.username if callback.from_user.username else 'отсутствует'}\n"
-
         "\n——————————————\n"
         "⚡ <b>Источник:</b> Telegram Quiz Bot"
     )
 
-    await bot.send_message(
-        chat_id=config.bot.request_chat_id,
-        text=admin_text
-    )
+    await bot.send_message(chat_id=config.bot.request_chat_id, text=admin_text)
 
-    save_lead_to_bitrix.delay(
-        name=name,
-        phone=phone,
-        speciality=key
-    )
+    save_lead_to_bitrix.delay(name=name, phone=phone, speciality=key)
 
     await state.clear()

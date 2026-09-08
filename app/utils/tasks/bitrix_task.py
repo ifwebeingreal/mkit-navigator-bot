@@ -7,9 +7,9 @@ from config import config
 
 
 async def _save_lead_to_bitrix(
-        name: str,
-        phone: str,
-        speciality: str,
+    name: str,
+    phone: str,
+    speciality: str,
 ):
     bx24 = Bitrix24(config.bitrix.bitrix_webhook_url)
 
@@ -35,10 +35,7 @@ async def _save_lead_to_bitrix(
             **new_lead_data,
         )
 
-        print(
-            f"Лид успешно добавлен! "
-            f"ID нового лида: {result}"
-        )
+        print(f"Лид успешно добавлен! " f"ID нового лида: {result}")
 
     except Exception as e:
         print(f"Ошибка при добавлении лида: {e}")
@@ -47,9 +44,9 @@ async def _save_lead_to_bitrix(
 
 @celery_app.task(name="save_lead_to_bitrix")
 def save_lead_to_bitrix(
-        name: str,
-        phone: str,
-        speciality: str,
+    name: str,
+    phone: str,
+    speciality: str,
 ):
     asyncio.run(
         _save_lead_to_bitrix(

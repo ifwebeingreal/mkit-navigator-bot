@@ -28,13 +28,8 @@ def get_progress_text(manager: DialogManager) -> str:
     filled = "🟦" * current
     empty = "⬜" * (total - current)
 
-    return (
-        f"🔮 <b>Пифия слушает. Вопрос {current}/{total}</b>\n"
-        f"{filled}{empty}"
-    )
+    return f"🔮 <b>Пифия слушает. Вопрос {current}/{total}</b>\n" f"{filled}{empty}"
 
 
 async def quiz_getter(dialog_manager: DialogManager, **kwargs):
-    return {
-        "progress": get_progress_text(dialog_manager)
-    }
+    return {"progress": get_progress_text(dialog_manager)}

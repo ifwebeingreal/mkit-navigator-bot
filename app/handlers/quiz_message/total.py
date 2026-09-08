@@ -1,4 +1,5 @@
 import asyncio
+from typing import Literal
 
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager
@@ -7,7 +8,6 @@ from app.database.requests.user.select import get_user
 from app.database.requests.user.update import update_user_quiz_date
 
 import app.keyboards.builder as bkb
-
 
 RESULT_TEXT = {
     "prog": """
@@ -105,218 +105,534 @@ RESULT_TEXT = {
 По твоим ответам пока сложно определить направление. Но это не значит, что Матрица не для тебя!
 
 Попробуй изучить разные направления и найти то, что действительно откликается 🚀
-"""
+""",
+}
+
+Answer = Literal["A", "B", "C", "D", "E"]
+Specialty = Literal["prog", "sec", "des", "sys", "none"]
+
+# Чем БОЛЬШЕ число — тем сильнее ответ.
+ANSWER_RANK: dict[Answer, int] = {
+    "A": 5,
+    "B": 4,
+    "C": 3,
+    "D": 2,
+    "E": 1,
+}
+
+# Вопросы, которые характеризуют каждое направление.
+# Используем их только для определения приоритета,
+# если пользователю подходят сразу несколько направлений.
+SPECIALTY_QUESTIONS: dict[str, tuple[int, ...]] = {
+    "prog": (1, 2, 4, 7, 8),
+    "sec": (1, 3, 4, 7),
+    "des": (5, 9),
+    "sys": (1, 6),
 }
 
 
-def normalize_answers(answers):
-    return {
-        key.split(":")[-1]: value
-        for key, value in answers.items()
+def normalize_answers(answers: dict) -> dict[str, Answer]:
+    """
+    Приводит:
+
+        Quiz:question_1 -> question_1
+
+    к единому формату.
+    """
+
+    normalized = {}
+
+    for key, value in answers.items():
+        question = str(key).split(":")[-1]
+
+        if value in ANSWER_RANK:
+            normalized[question] = value
+
+    return normalized
+
+
+def validate_answers(answers: dict[str, Answer]) -> None:
+    """
+    Проверяем, что пользователь действительно
+    ответил на все 9 вопросов.
+    """
+
+    required_questions = {f"question_{number}" for number in range(1, 10)}
+
+    missing = required_questions - answers.keys()
+
+    if missing:
+        raise ValueError(f"Не получены ответы на вопросы: {sorted(missing)}")
+
+
+def answer(
+    answers: dict[str, Answer],
+    question: int,
+) -> Answer:
+    return answers[f"question_{question}"]
+
+
+def is_stronger(
+    first: Answer,
+    second: Answer,
+) -> bool:
+    """
+    A сильнее B, B сильнее C и т.д.
+    """
+
+    return ANSWER_RANK[first] > ANSWER_RANK[second]
+
+
+# ============================================================
+# РАЗРАБОТКА ПО
+# ============================================================
+
+
+def matches_programming(
+    answers: dict[str, Answer],
+) -> tuple[bool, bool]:
+    """
+    Возвращает:
+
+        (подходит_разработка, нужен_fallback)
+
+    fallback нужен в ситуации, когда базовые критерии
+    разработчика выполнены, но среди 1, 2 и 8 вопросов
+    два или более ответа C.
+    """
+
+    q1 = answer(answers, 1)
+    q2 = answer(answers, 2)
+    q4 = answer(answers, 4)
+    q7 = answer(answers, 7)
+    q8 = answer(answers, 8)
+
+    # Если вопрос 8 = A,
+    # направление разработки обязательно рассматриваем.
+    if q8 == "A":
+        return True, False
+
+    base_match = (
+        q1 in {"A", "B", "C"}
+        and q2 in {"A", "B", "C"}
+        and q4 in {"A", "B", "C"}
+        and q7 in {"A", "B", "C", "D"}
+        and q8 in {"A", "B", "C"}
+    )
+
+    if not base_match:
+        return False, False
+
+    c_count = sum(value == "C" for value in (q1, q2, q8))
+
+    if c_count >= 2:
+        return False, True
+
+    return True, False
+
+
+# ============================================================
+# ИНФОРМАЦИОННАЯ БЕЗОПАСНОСТЬ
+# ============================================================
+
+
+def matches_security(
+    answers: dict[str, Answer],
+) -> bool:
+    q1 = answer(answers, 1)
+    q3 = answer(answers, 3)
+    q4 = answer(answers, 4)
+    q7 = answer(answers, 7)
+
+    return (
+        q1 in {"A", "B"}
+        and q3 in {"A", "B"}
+        and q4 in {"A", "B", "C"}
+        and q7 in {"A", "B", "C"}
+    )
+
+
+def has_security_priority(
+    answers: dict[str, Answer],
+) -> bool:
+    """
+    Дополнительный критерий:
+
+    если ответ на вопрос 3 сильнее,
+    чем на 1, 2 или 8, это усиливает
+    направление информационной безопасности.
+
+    ВАЖНО:
+    это приоритет, а не обязательное условие
+    для попадания в информационную безопасность.
+    """
+
+    q3 = answer(answers, 3)
+
+    return any(is_stronger(q3, answer(answers, question)) for question in (1, 2, 8))
+
+
+# ============================================================
+# ГРАФИЧЕСКИЙ ДИЗАЙН
+# ============================================================
+
+
+def matches_design(
+    answers: dict[str, Answer],
+) -> bool:
+    q1 = answer(answers, 1)
+    q3 = answer(answers, 3)
+    q5 = answer(answers, 5)
+    q8 = answer(answers, 8)
+    q9 = answer(answers, 9)
+
+    return (
+        q5 in {"A", "B", "C"}
+        and q9 in {"A", "B", "C"}
+        and q1 in {"C", "D", "E"}
+        and q3 in {"C", "D", "E"}
+        and q8 in {"C", "D", "E"}
+        and (q5 in {"A", "B"} or q9 in {"A", "B"})
+    )
+
+
+# ============================================================
+# ТЕХНИЧЕСКАЯ ЭКСПЛУАТАЦИЯ
+# ============================================================
+
+
+def matches_systems(
+    answers: dict[str, Answer],
+) -> bool:
+    q1 = answer(answers, 1)
+    q6 = answer(answers, 6)
+
+    if q1 not in {"A", "B", "C"} or q6 not in {"A", "B", "C"}:
+        return False
+
+    c_count = sum(value == "C" for value in (q1, q6))
+
+    return c_count <= 1
+
+
+# ============================================================
+# "IT НЕ ПРИВЛЕКАЕТ"
+# ============================================================
+
+
+def matches_none(
+    answers: dict[str, Answer],
+) -> bool:
+    """
+    Согласно текущим критериям:
+
+    1, 2, 3, 5, 6 = C/D/E.
+
+    Вопросы 4 и 7 не учитываются.
+    """
+
+    return all(
+        answer(answers, question) in {"C", "D", "E"} for question in (1, 2, 3, 5, 6)
+    )
+
+
+# ============================================================
+# FALLBACK РАЗРАБОТЧИКА
+# ============================================================
+
+
+def get_programming_fallback(
+    answers: dict[str, Answer],
+) -> Specialty | None:
+    """
+    Используется, когда:
+
+    Q1/Q2/Q8 подходят разработчику,
+    но среди них >= 2 ответов C.
+
+    Тогда смотрим самые сильные ответы:
+
+    Q3 -> информационная безопасность
+    Q5/Q9 -> дизайн
+    Q6 -> эксплуатация
+
+    Рассматриваем только A/B.
+    """
+
+    candidates: dict[Specialty, int] = {
+        "sec": ANSWER_RANK[answer(answers, 3)],
+        "des": max(
+            ANSWER_RANK[answer(answers, 5)],
+            ANSWER_RANK[answer(answers, 9)],
+        ),
+        "sys": ANSWER_RANK[answer(answers, 6)],
     }
 
-
-def get_result(answers: dict):
-    answers = normalize_answers(answers)
-
-    q1 = answers.get("question_1")
-    q2 = answers.get("question_2")
-    q3 = answers.get("question_3")
-    q4 = answers.get("question_4")
-    q5 = answers.get("question_5")
-    q6 = answers.get("question_6")
-    q7 = answers.get("question_7")
-    q8 = answers.get("question_8")
-    q9 = answers.get("question_9")
-
-    # Чем меньше число — тем сильнее ответ
-    rank = {
-        "A": 5,
-        "B": 4,
-        "C": 3,
-        "D": 2,
-        "E": 1,
+    # По ТЗ альтернативный ответ
+    # должен быть минимум B.
+    candidates = {
+        specialty: score
+        for specialty, score in candidates.items()
+        if score >= ANSWER_RANK["B"]
     }
 
-    results = []
+    if not candidates:
+        return None
 
-    # -----------------------------
-    # 6. IT совсем не привлекает
-    # -----------------------------
-    if (
-        q1 in ["C", "D", "E"]
-        and q2 in ["C", "D", "E"]
-        and q3 in ["C", "D", "E"]
-        and q5 in ["C", "D", "E"]
-        and q6 in ["C", "D", "E"]
-    ):
+    max_score = max(candidates.values())
+
+    best = [specialty for specialty, score in candidates.items() if score == max_score]
+
+    if len(best) == 1:
+        return best[0]
+
+    # Если одинаковый ответ, используем общий
+    # профиль специальности как tie-break.
+    best.sort(
+        key=lambda specialty: specialty_strength(
+            specialty,
+            answers,
+        ),
+        reverse=True,
+    )
+
+    return best[0]
+
+
+# ============================================================
+# СРАВНЕНИЕ ДВУХ СПЕЦИАЛЬНОСТЕЙ
+# ============================================================
+
+
+def specialty_strength(
+    specialty: Specialty,
+    answers: dict[str, Answer],
+) -> tuple[int, int, int, int]:
+    """
+    Правило приоритета:
+
+    1. больше A
+    2. больше B
+    3. больше C
+    4. общий балл
+
+    Первые два пункта соответствуют ТЗ заказчика.
+    C и общий балл используются только как технический
+    tie-break, чтобы результат всегда был детерминирован.
+    """
+
+    questions = SPECIALTY_QUESTIONS.get(specialty, ())
+
+    values = [answer(answers, question) for question in questions]
+
+    a_count = values.count("A")
+    b_count = values.count("B")
+    c_count = values.count("C")
+
+    total_score = sum(ANSWER_RANK[value] for value in values)
+
+    return (
+        a_count,
+        b_count,
+        c_count,
+        total_score,
+    )
+
+
+def sort_results(
+    results: set[Specialty],
+    answers: dict[str, Answer],
+) -> list[Specialty]:
+    """
+    Сортируем результаты согласно правилу:
+    больше A -> больше B.
+
+    Если всё равно равенство —
+    используется C и суммарная сила ответов.
+    """
+
+    return sorted(
+        results,
+        key=lambda specialty: specialty_strength(
+            specialty,
+            answers,
+        ),
+        reverse=True,
+    )
+
+
+# ============================================================
+# ОСНОВНАЯ ЛОГИКА
+# ============================================================
+
+
+def get_result(raw_answers: dict) -> list[Specialty]:
+    answers = normalize_answers(raw_answers)
+
+    validate_answers(answers)
+
+    results: set[Specialty] = set()
+
+    # --------------------------------------------------------
+    # 1. Разработка
+    # --------------------------------------------------------
+
+    programming, programming_fallback = matches_programming(answers)
+
+    if programming:
+        results.add("prog")
+
+    # --------------------------------------------------------
+    # 2. Информационная безопасность
+    # --------------------------------------------------------
+
+    security = matches_security(answers)
+
+    if security:
+        results.add("sec")
+
+    # --------------------------------------------------------
+    # 3. Графический дизайн
+    # --------------------------------------------------------
+
+    design = matches_design(answers)
+
+    if design:
+        results.add("des")
+
+    # --------------------------------------------------------
+    # Специальный fallback разработчика
+    # --------------------------------------------------------
+
+    if programming_fallback:
+        fallback = get_programming_fallback(answers)
+
+        if fallback is not None:
+            results.add(fallback)
+
+    # --------------------------------------------------------
+    # 4. Техническая эксплуатация
+    #
+    # По ТЗ добавляем её только тогда,
+    # когда пользователь НЕ прошёл критерии
+    # первых трёх направлений.
+    # --------------------------------------------------------
+
+    if not results and matches_systems(answers):
+        results.add("sys")
+
+    # --------------------------------------------------------
+    # 6. IT не привлекает
+    #
+    # ВАЖНО:
+    # проверяется ПОСЛЕ специальностей.
+    #
+    # Иначе старая реализация могла вернуть none
+    # даже при наличии валидного результата.
+    # --------------------------------------------------------
+
+    if not results and matches_none(answers):
         return ["none"]
 
-    # -----------------------------
-    # 3. Графический дизайн
-    # -----------------------------
-    graph = (
-        q5 in ["A", "B", "C"]
-        and q9 in ["A", "B", "C"]
-        and q1 in ["C", "D", "E"]
-        and q3 in ["C", "D", "E"]
-        and q8 in ["C", "D", "E"]
-        and (
-            q5 in ["A", "B"]
-            or q9 in ["A", "B"]
-        )
-    )
-
-    if graph:
-        results.append("des")
-
-    # -----------------------------
-    # 2. Инфобез
-    # -----------------------------
-    infosec = (
-        q1 in ["A", "B"]
-        and q3 in ["A", "B"]
-        and q4 in ["A", "B", "C"]
-        and q7 in ["A", "B", "C"]
-    )
-
-    # если вопрос 3 выше чем 1/2/8
-    if infosec:
-        if (
-            rank[q3] > rank[q1]
-            or rank[q3] > rank[q2]
-            or rank[q3] > rank[q8]
-        ):
-            results.append("sec")
-
-    # -----------------------------
-    # 1. Разработчик
-    # -----------------------------
-
-    # Если на 8 ответ А — сразу разработчик
-    if q8 == "A":
-        results.append("prog")
-
-    else:
-
-        prog = (
-            q1 in ["A", "B", "C"]
-            and q2 in ["A", "B", "C"]
-            and q4 in ["A", "B", "C"]
-            and q7 in ["A", "B", "C", "D"]
-            and q8 in ["A", "B", "C"]
-        )
-
-        if prog:
-
-            c_count = sum([
-                q1 == "C",
-                q2 == "C",
-                q8 == "C",
-            ])
-
-            if c_count < 2:
-                results.append("prog")
-            else:
-                # смотрим лучший из 3,5,6,9
-                best = max(
-                    [
-                        ("sec", rank[q3]),
-                        ("des", max(rank[q5], rank[q9])),
-                        ("sys", rank[q6]),
-                    ],
-                    key=lambda x: x[1]
-                )[0]
-
-                results.append(best)
-
-    # -----------------------------
-    # 4. Тех эксплуатация
-    # -----------------------------
-    if (
-        q1 in ["A", "B", "C"]
-        and q6 in ["A", "B", "C"]
-    ):
-
-        c_count = sum([
-            q1 == "C",
-            q6 == "C",
-        ])
-
-        if c_count <= 1:
-
-            # только если не подошли первые три направления
-            if not any(x in results for x in ["prog", "sec", "des"]):
-                results.append("sys")
-
-    # -----------------------------
-    # 5. Разработчик + Инфобез
-    # -----------------------------
-    if "prog" in results and "sec" in results:
-
-        prog_ab = sum(
-            x == "A"
-            for x in [q1, q2, q4, q7, q8]
-        )
-
-        sec_ab = sum(
-            x == "A"
-            for x in [q1, q3, q4, q7]
-        )
-
-        if prog_ab >= sec_ab:
-            return ["prog", "sec"]
-        else:
-            return ["sec", "prog"]
-
-    # убрать дубли
-    results = list(dict.fromkeys(results))
-
+    # Если вообще ничего не подошло.
     if not results:
         return ["none"]
 
-    return results
+    # --------------------------------------------------------
+    # Сортировка при совпадениях
+    # --------------------------------------------------------
+
+    sorted_results = sort_results(
+        results,
+        answers,
+    )
+
+    # По текущей логике квиза пользователю имеет смысл
+    # показывать максимум два наиболее подходящих направления.
+    return sorted_results[:2]
 
 
-async def show_result(callback: CallbackQuery, manager: DialogManager):
-    answers = manager.dialog_data.get("answers", {})
-    user = await get_user(callback.from_user.id)
+# ============================================================
+# ВЫВОД РЕЗУЛЬТАТА
+# ============================================================
+
+
+async def show_result(
+    callback: CallbackQuery,
+    manager: DialogManager,
+):
+    raw_answers = manager.dialog_data.get(
+        "answers",
+        {},
+    )
+
+    user = await get_user(
+        callback.from_user.id,
+    )
 
     if not user.quiz_completed_at:
-        await update_user_quiz_date(callback.from_user.id)
+        await update_user_quiz_date(
+            callback.from_user.id,
+        )
 
     msg = await callback.message.edit_text(
-        "🔮 Пифия закрывает глаза — она услышала достаточно..."
+        "🔮 Пифия закрывает глаза — " "она услышала достаточно..."
     )
-    await asyncio.sleep(1.2)
-    await msg.edit_text(
-        "💻 ...и уже видит, куда на самом деле ведёт твой путь."
-    )
+
     await asyncio.sleep(1.2)
 
-    results = get_result(answers)
+    await msg.edit_text("💻 ...и уже видит, куда на самом деле " "ведёт твой путь.")
+
+    await asyncio.sleep(1.2)
+
+    try:
+        results = get_result(
+            raw_answers,
+        )
+    except ValueError as error:
+        print(f"Ошибка подсчёта квиза " f"user_id={callback.from_user.id}: " f"{error}")
+
+        await manager.done()
+
+        await msg.edit_text(
+            "⚠️ Не удалось определить результат теста.\n\n"
+            "Попробуй пройти его ещё раз."
+        )
+
+        await callback.answer()
+        return
+
     await manager.done()
 
-    print(answers)
-    print(results)
+    print(f"user_id={callback.from_user.id}")
+    print(f"answers={normalize_answers(raw_answers)}")
+    print(f"results={results}")
 
+    # Один результат
     if len(results) == 1:
         key = results[0]
+
         await msg.edit_text(
             RESULT_TEXT[key],
-            reply_markup=await bkb.result_panel(key)
+            reply_markup=await bkb.result_panel(
+                key,
+            ),
         )
 
-    else:
-        text = (
-            "🎯 <b>Тебе подходят несколько направлений:</b>\n\n"
-        )
-        for key in results:
-            text += RESULT_TEXT[key] + "\n\n"
+        await callback.answer()
+        return
 
-        await msg.edit_text(
-            text,
-            reply_markup=await bkb.result_panel(results[0])
-        )
+    # Несколько результатов
+    text = "🎯 <b>Тебе подходят несколько направлений:</b>\n\n"
+
+    for key in results:
+        text += RESULT_TEXT[key].strip() + "\n\n"
+
+    await msg.edit_text(
+        text.strip(),
+        reply_markup=await bkb.result_panel(
+            results[0],
+        ),
+    )
 
     await callback.answer()

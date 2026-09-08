@@ -26,7 +26,9 @@ class User(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger)
     first_name: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
-    quiz_completed_at: Mapped[datetime] = mapped_column(DateTime, default=None, nullable=True)
+    quiz_completed_at: Mapped[datetime] = mapped_column(
+        DateTime, default=None, nullable=True
+    )
 
 
 class Admin(Base):

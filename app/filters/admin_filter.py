@@ -5,12 +5,7 @@ from app.database.requests.admin.select import get_admins
 
 
 class AdminProtect(BaseMiddleware):
-    async def __call__(
-            self,
-            handler,
-            event: TelegramObject,
-            data: dict
-    ):
+    async def __call__(self, handler, event: TelegramObject, data: dict):
         user = getattr(event, "from_user", None)
         if not user:
             return await handler(event, data)

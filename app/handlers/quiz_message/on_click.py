@@ -37,7 +37,8 @@ async def on_back_menu(callback: CallbackQuery, widget: Any, manager: DialogMana
 
 Выбор за тобой. Нажми кнопку ниже 👇
         """,
-        reply_markup=ikb.user_panel)
+        reply_markup=ikb.user_panel,
+    )
 
 
 def init_scores(manager: DialogManager):
@@ -45,11 +46,7 @@ def init_scores(manager: DialogManager):
         manager.dialog_data["answers"] = {}
 
 
-async def on_answer(
-    callback: CallbackQuery,
-    widget,
-    manager: DialogManager
-):
+async def on_answer(callback: CallbackQuery, widget, manager: DialogManager):
     await callback.answer()
 
     init_scores(manager)
